@@ -35,7 +35,7 @@ var recognize = (reqData) =>{
     client.recognize(recognizeParams).then((result)=>{
         if(result.status==200 && result.body.Errors==undefined){
             resolve(result);
-       }else{                
+       }else{                         
            reject(result.body.Errors);
        }      
     }).catch((err)=>{
