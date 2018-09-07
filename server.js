@@ -34,7 +34,11 @@ app.get('/', function(req,res){
  });
 
  app.post("/enroll", (req, res)=>{
-     res.setHeader('Content-Type', 'application/json');         
+     res.setHeader('Content-Type', 'application/json');  
+     if(req.files!=undefined){ 
+        req.body.imageSrc = "data:image/png;base64,".concat(new Buffer(req.files.imageSrc.data).toString('base64'));
+    }
+    console.log("Inside ");       
      kairosApi.enroll(req.body).then((response)=>{  
         var values =  _.pick(response.body,["face_id"]);     
         var faceIdModel = new faceIdentityModel({
