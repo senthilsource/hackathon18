@@ -56,11 +56,10 @@ app.get('/', function(req,res){
  });
 
  app.post("/recognize", (req, res)=>{   
-    res.setHeader('Content-Type', 'application/json'); 
-   // console.log("data:image/png;base64,".concat(base64_encode('C:\\Work\\Hackathon\\Kairos_demo\\faceregapp\\temp\\test.png'))); 
-   // console.log(req.files.imageSrc.data); 
-    //req.body.imageSrc="data:image/png;base64,".concat(base64_encode('C:\\Senthil\\work\\hackathon\\hackathon18\\temp\\test.png')); 
-    req.body.imageSrc = "data:image/png;base64,".concat(new Buffer(req.files.imageSrc.data).toString('base64'));
+    res.setHeader('Content-Type', 'application/json');   
+    if(req.files!='undefined'){ 
+        req.body.imageSrc = "data:image/png;base64,".concat(new Buffer(req.files.imageSrc.data).toString('base64'));
+    }
     kairosApi.recognize(req.body).then((response)=>{     
         //console.log(response);  
        res.status(response.status).send(response.body);
