@@ -1,5 +1,5 @@
 var Kairos = require('kairos-api');
-var client = new Kairos('3924c2a9', 'a9c4deb930cd0d7e8e98c06eabe123f9');
+var client = new Kairos('6c2be07a', 'b008e9aba56f74d9cdbe59c8b040ae21');
 var request = require("request");
  
 var params = {    
