@@ -57,7 +57,7 @@ app.get('/', function(req,res){
 
  app.post("/recognize", (req, res)=>{   
     res.setHeader('Content-Type', 'application/json');   
-    if(req.files!='undefined'){ 
+    if(req.files!=undefined){ 
         req.body.imageSrc = "data:image/png;base64,".concat(new Buffer(req.files.imageSrc.data).toString('base64'));
     }
     kairosApi.recognize(req.body).then((response)=>{     
