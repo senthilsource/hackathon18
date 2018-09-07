@@ -58,8 +58,9 @@ app.get('/', function(req,res){
  app.post("/recognize", (req, res)=>{   
     res.setHeader('Content-Type', 'application/json'); 
    // console.log("data:image/png;base64,".concat(base64_encode('C:\\Work\\Hackathon\\Kairos_demo\\faceregapp\\temp\\test.png'))); 
-    //console.log(req.body.imageSrc); 
-   // req.body.imageSrc="data:image/png;base64,".concat(base64_encode('C:\\Work\\Hackathon\\Kairos_demo\\faceregapp\\temp\\test.png')); 
+   // console.log(req.files.imageSrc.data); 
+    //req.body.imageSrc="data:image/png;base64,".concat(base64_encode('C:\\Senthil\\work\\hackathon\\hackathon18\\temp\\test.png')); 
+    req.body.imageSrc = "data:image/png;base64,".concat(new Buffer(req.files.imageSrc.data).toString('base64'));
     kairosApi.recognize(req.body).then((response)=>{     
         //console.log(response);  
        res.status(response.status).send(response.body);
@@ -68,12 +69,3 @@ app.get('/', function(req,res){
         res.status(500).send(err[0].Message);
     });   
 });
-
-
-// function to encode file data to base64 encoded string
-function base64_encode(file) {
-    // read binary data
-    var bitmap = fs.readFileSync(file);   
-    // convert binary data to base64 encoded string
-    return new Buffer(bitmap).toString('base64');
-}
