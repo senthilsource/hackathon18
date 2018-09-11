@@ -10,7 +10,11 @@ var kairosApi = require("./kairos/kairos-api");
 var {faceIdentityModel} = require("./models/schema");
 var http = require('http'),
 WebSocket = require('ws');
+var {spawn} = require("child_process");
 
+var pythonProcess = spawn('python',["./python/camera.py"]);
+
+console.log(pythonProcess.pid);
 
 var port = process.env.PORT || 3000;
 
@@ -34,21 +38,9 @@ app.get('/', function(req,res){
     res.sendFile(__dirname + "/index.html"); 
  });
 
- app.get('/live', callName);
-
-
- function callName(req, res) { 
-      
-    var {spawn} = require("child_process");
-    var pythonProcess = spawn('python',["camera.py"]);    
-    console.log(pythonProcess.pid);
-    
-    // Takes stdout data from script which executed 
-    // with arguments and send this data to res object 
-    pythonProcess.stdout.on('data', function(data) { 
-        res.sendFile(__dirname + "/view-stream.html"); 
-    } ) 
-} 
+ app.get('/live', function(req,res){
+    res.sendFile(__dirname + "/live-stream.html"); 
+ });
 
  app.get('/verify', function(req,res){
     res.sendFile(__dirname + "/test.html"); 
@@ -94,19 +86,6 @@ app.get('/', function(req,res){
     });   
 });
 
-
-
-
-
-
-// if (process.argv.length < 3) {
-// 	console.log(
-// 		'Usage: \n' +
-// 		'node websocket-relay.js <secret> [<stream-port> <websocket-port>]'
-// 	);
-// 	process.exit();
-// }
-
 var STREAM_SECRET = process.argv[2],
 	STREAM_PORT = process.argv[3] || 9990,
 	WEBSOCKET_PORT = process.argv[4] || 8082,
@@ -146,15 +125,6 @@ socketServer.broadcast = function(data) {
 // HTTP Server to accept incomming MPEG-TS Stream from ffmpeg
 var streamServer = http.createServer( function(request, response) {
 	var params = request.url.substr(1).split('/');
-
-	// if (params[0] !== STREAM_SECRET) {
-	// 	console.log(
-	// 		'Failed Stream Connection: '+ request.socket.remoteAddress + ':' +
-	// 		request.socket.remotePort + ' - wrong secret.'
-	// 	);
-	// 	response.end();
-	// }
-
 	response.connection.setTimeout(0);
 	console.log(
 		'Stream Connected: ' + 
