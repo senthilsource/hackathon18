@@ -105,12 +105,12 @@ app.get('/', function(req,res){
 
 var STREAM_SECRET = process.argv[2],
 	STREAM_PORT = process.argv[3] || 9990,
-	WEBSOCKET_PORT = process.argv[4] || 8082,
+	WEBSOCKET_PORT = process.argv[4] || process.env.PORT,
 	RECORD_STREAM = false;
 	var i=0;
 // Websocket Server
 
-var socketServer = new WebSocket.Server({port: 8443, perMessageDeflate: false});
+var socketServer = new WebSocket.Server({port: process.env.PORT, perMessageDeflate: false});
 socketServer.connectionCount = 0;
 socketServer.on('connection', function(socket, upgradeReq) {
 	socketServer.connectionCount++;
