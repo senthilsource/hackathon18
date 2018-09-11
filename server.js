@@ -86,6 +86,19 @@ app.get('/', function(req,res){
     });   
 });
 
+
+
+
+
+
+// if (process.argv.length < 3) {
+// 	console.log(
+// 		'Usage: \n' +
+// 		'node websocket-relay.js <secret> [<stream-port> <websocket-port>]'
+// 	);
+// 	process.exit();
+// }
+
 var STREAM_SECRET = process.argv[2],
 	STREAM_PORT = process.argv[3] || 9990,
 	WEBSOCKET_PORT = process.argv[4] || 8082,
@@ -125,6 +138,15 @@ socketServer.broadcast = function(data) {
 // HTTP Server to accept incomming MPEG-TS Stream from ffmpeg
 var streamServer = http.createServer( function(request, response) {
 	var params = request.url.substr(1).split('/');
+
+	// if (params[0] !== STREAM_SECRET) {
+	// 	console.log(
+	// 		'Failed Stream Connection: '+ request.socket.remoteAddress + ':' +
+	// 		request.socket.remotePort + ' - wrong secret.'
+	// 	);
+	// 	response.end();
+	// }
+
 	response.connection.setTimeout(0);
 	console.log(
 		'Stream Connected: ' + 
