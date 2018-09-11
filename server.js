@@ -130,7 +130,7 @@ socketServer.on('connection', function(socket, upgradeReq) {
 	});
 });
 socketServer.broadcast = function(data) {
-	//console.log(data);	
+	console.log(data);	
 //childProcess
 	socketServer.clients.forEach(function each(client) {
 		if (client.readyState === WebSocket.OPEN) {
