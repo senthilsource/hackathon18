@@ -8,6 +8,9 @@ var _ = require("lodash");
 var fs = require("fs");
 var kairosApi = require("./kairos/kairos-api");
 var {faceIdentityModel} = require("./models/schema");
+var http = require('http'),
+WebSocket = require('ws');
+
 
 var port = process.env.PORT || 3000;
 
@@ -16,6 +19,8 @@ app.listen(port, () => {
   })
   
 app.use(express.static(__dirname + '/public'));
+
+app.use('/scripts', express.static(__dirname + '/node_modules/materialize-css/dist/'));
 
 //To upload
 app.use(fileUpload());
@@ -29,8 +34,28 @@ app.get('/', function(req,res){
     res.sendFile(__dirname + "/index.html"); 
  });
 
+ app.get('/live', callName);
+
+
+ function callName(req, res) { 
+      
+    var {spawn} = require("child_process");
+    var pythonProcess = spawn('python',["camera.py"]);    
+    console.log(pythonProcess.pid);
+    
+    // Takes stdout data from script which executed 
+    // with arguments and send this data to res object 
+    pythonProcess.stdout.on('data', function(data) { 
+        res.sendFile(__dirname + "/view-stream.html"); 
+    } ) 
+} 
+
  app.get('/verify', function(req,res){
     res.sendFile(__dirname + "/test.html"); 
+ });
+
+ app.get('/showMap', function(req,res){
+    res.sendFile(__dirname + "/gmap.html"); 
  });
 
  app.post("/enroll", (req, res)=>{
@@ -68,3 +93,94 @@ app.get('/', function(req,res){
         res.status(500).send(err[0].Message);
     });   
 });
+
+
+
+
+
+
+// if (process.argv.length < 3) {
+// 	console.log(
+// 		'Usage: \n' +
+// 		'node websocket-relay.js <secret> [<stream-port> <websocket-port>]'
+// 	);
+// 	process.exit();
+// }
+
+var STREAM_SECRET = process.argv[2],
+	STREAM_PORT = process.argv[3] || 9990,
+	WEBSOCKET_PORT = process.argv[4] || 8082,
+	RECORD_STREAM = false;
+	var i=0;
+// Websocket Server
+
+var socketServer = new WebSocket.Server({port: WEBSOCKET_PORT, perMessageDeflate: false});
+socketServer.connectionCount = 0;
+socketServer.on('connection', function(socket, upgradeReq) {
+	socketServer.connectionCount++;
+	
+
+	console.log(
+		'New WebSocket Connection: ', 
+		(upgradeReq || socket.upgradeReq).socket.remoteAddress,
+		(upgradeReq || socket.upgradeReq).headers['user-agent'],
+		'('+socketServer.connectionCount+' total)'
+	);
+	socket.on('close', function(code, message){
+		socketServer.connectionCount--;
+		console.log(
+			'Disconnected WebSocket ('+socketServer.connectionCount+' total)'
+		);
+	});
+});
+socketServer.broadcast = function(data) {
+	//console.log(data);	
+//childProcess
+	socketServer.clients.forEach(function each(client) {
+		if (client.readyState === WebSocket.OPEN) {
+			client.send(data);
+		}
+	});
+};
+
+// HTTP Server to accept incomming MPEG-TS Stream from ffmpeg
+var streamServer = http.createServer( function(request, response) {
+	var params = request.url.substr(1).split('/');
+
+	// if (params[0] !== STREAM_SECRET) {
+	// 	console.log(
+	// 		'Failed Stream Connection: '+ request.socket.remoteAddress + ':' +
+	// 		request.socket.remotePort + ' - wrong secret.'
+	// 	);
+	// 	response.end();
+	// }
+
+	response.connection.setTimeout(0);
+	console.log(
+		'Stream Connected: ' + 
+		request.socket.remoteAddress + ':' +
+		request.socket.remotePort
+	);
+	request.on('data', function(data){
+		socketServer.broadcast(data);
+		console.log(data);
+		if (request.socket.recording) {
+			request.socket.recording.write(data);
+		}
+	});
+	request.on('end',function(){
+		console.log('close');
+		if (request.socket.recording) {
+			request.socket.recording.close();
+		}
+	});
+
+	// Record the stream to a local file?
+	if (RECORD_STREAM) {
+		var path = 'recordings/' + Date.now() + '.ts';
+		request.socket.recording = fs.createWriteStream(path);
+	}
+}).listen(STREAM_PORT);
+
+console.log('Listening for incomming MPEG-TS Stream on http://127.0.0.1:'+STREAM_PORT+'/<secret>');
+console.log('Awaiting WebSocket connections on ws://127.0.0.1:'+WEBSOCKET_PORT+'/');
