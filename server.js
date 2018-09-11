@@ -51,7 +51,11 @@ app.get('/', function(req,res){
  });
 
  app.post("/enroll", (req, res)=>{
-     res.setHeader('Content-Type', 'application/json');         
+     res.setHeader('Content-Type', 'application/json');  
+     if(req.files!=undefined){ 
+        req.body.imageSrc = "data:image/png;base64,".concat(new Buffer(req.files.imageSrc.data).toString('base64'));
+    }
+    console.log("Inside ");       
      kairosApi.enroll(req.body).then((response)=>{  
         var values =  _.pick(response.body,["face_id"]);     
         var faceIdModel = new faceIdentityModel({
@@ -86,6 +90,19 @@ app.get('/', function(req,res){
     });   
 });
 
+
+
+
+
+
+// if (process.argv.length < 3) {
+// 	console.log(
+// 		'Usage: \n' +
+// 		'node websocket-relay.js <secret> [<stream-port> <websocket-port>]'
+// 	);
+// 	process.exit();
+// }
+
 var STREAM_SECRET = process.argv[2],
 	STREAM_PORT = process.argv[3] || 9990,
 	WEBSOCKET_PORT = process.argv[4] || 8082,
@@ -94,6 +111,7 @@ var STREAM_SECRET = process.argv[2],
 // Websocket Server
 
 var socketServer = new WebSocket.Server({port: WEBSOCKET_PORT, perMessageDeflate: false});
+console.log(socketServer);
 socketServer.connectionCount = 0;
 socketServer.on('connection', function(socket, upgradeReq) {
 	socketServer.connectionCount++;
@@ -113,7 +131,7 @@ socketServer.on('connection', function(socket, upgradeReq) {
 	});
 });
 socketServer.broadcast = function(data) {
-	//console.log(data);	
+	
 //childProcess
 	socketServer.clients.forEach(function each(client) {
 		if (client.readyState === WebSocket.OPEN) {
@@ -125,6 +143,15 @@ socketServer.broadcast = function(data) {
 // HTTP Server to accept incomming MPEG-TS Stream from ffmpeg
 var streamServer = http.createServer( function(request, response) {
 	var params = request.url.substr(1).split('/');
+
+	// if (params[0] !== STREAM_SECRET) {
+	// 	console.log(
+	// 		'Failed Stream Connection: '+ request.socket.remoteAddress + ':' +
+	// 		request.socket.remotePort + ' - wrong secret.'
+	// 	);
+	// 	response.end();
+	// }
+
 	response.connection.setTimeout(0);
 	console.log(
 		'Stream Connected: ' + 
