@@ -110,8 +110,7 @@ var STREAM_SECRET = process.argv[2],
 	var i=0;
 // Websocket Server
 
-var socketServer = new WebSocket.Server({perMessageDeflate: false});
-console.log(socketServer);
+var socketServer = new WebSocket.Server({port: 8443, perMessageDeflate: false});
 socketServer.connectionCount = 0;
 socketServer.on('connection', function(socket, upgradeReq) {
 	socketServer.connectionCount++;
