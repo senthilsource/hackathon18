@@ -105,7 +105,7 @@ app.get('/', function(req,res){
 
 var STREAM_SECRET = process.argv[2],
 	STREAM_PORT = process.argv[3] || 9990,
-	WEBSOCKET_PORT = process.argv[4] || process.env.PORT,
+	WEBSOCKET_PORT = process.argv[4] || 8082,
 	RECORD_STREAM = false;
 	var i=0;
 // Websocket Server
