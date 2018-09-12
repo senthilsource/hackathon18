@@ -8,51 +8,12 @@ var _ = require("lodash");
 var fs = require("fs");
 var kairosApi = require("./kairos/kairos-api");
 var {faceIdentityModel} = require("./models/schema");
-var http = require('http'),
-WebSocket = require('ws');
-var {spawn} = require("child_process");
-
 var port = process.env.PORT || 3000;
 
-// var server = app.listen(port, () => {
-//     console.log(`App started in port ${port}`);
-//   });
+app.listen(port, ()=>{
+	console.log(`app listeing in port {}`, port);
+})
 
-  // HTTP Server to accept incomming MPEG-TS Stream from ffmpeg
-var server = http.createServer( function(request, response) {
-	var params = request.url.substr(1).split('/');
-
-	response.connection.setTimeout(0);
-	console.log(
-		'Stream Connected: ' + 
-		request.socket.remoteAddress + ':' +
-		request.socket.remotePort
-	);
-	request.on('data', function(data){
-		socketServer.broadcast(data);
-		console.log(data);
-		if (request.socket.recording) {
-			request.socket.recording.write(data);
-		}
-	});
-	request.on('end',function(){
-		console.log('close');
-		if (request.socket.recording) {
-			request.socket.recording.close();
-		}
-	});
-
-	// Record the stream to a local file?
-	if (RECORD_STREAM) {
-		var path = 'recordings/' + Date.now() + '.ts';
-		request.socket.recording = fs.createWriteStream(path);
-	}
-}).listen(port, () => {
-	     console.log(`App started in port ${port}`);
-	   });
-
-//server.on('upgrade', wsProxy.upgrade);
-  
 app.use(express.static(__dirname + '/public'));
 
 app.use('/scripts', express.static(__dirname + '/node_modules/materialize-css/dist/'));
@@ -121,64 +82,3 @@ app.get('/', function(req,res){
     });   
 });
 
-
-
-
-
-
-// if (process.argv.length < 3) {
-// 	console.log(
-// 		'Usage: \n' +
-// 		'node websocket-relay.js <secret> [<stream-port> <websocket-port>]'
-// 	);
-// 	process.exit();
-// }
-
-var STREAM_SECRET = process.argv[2],
-	STREAM_PORT = process.argv[3] || 9990,
-	WEBSOCKET_PORT = process.argv[4] || 8082,
-	RECORD_STREAM = false;
-	var i=0;
-// Websocket Server
-
-
-var socketServer = new WebSocket.Server({ server: server,
-    autoAcceptConnections: false}); 
-//console.log(socketServer);
-socketServer.connectionCount = 0;
-socketServer.on('connection', function(socket, upgradeReq) {
-	socketServer.connectionCount++;
-	
-
-	console.log(
-		'New WebSocket Connection: ', 
-		(upgradeReq || socket.upgradeReq).socket.remoteAddress,
-		(upgradeReq || socket.upgradeReq).headers['user-agent'],
-		'('+socketServer.connectionCount+' total)'
-	);
-	socket.on('close', function(code, message){
-		socketServer.connectionCount--;
-		console.log(
-			'Disconnected WebSocket ('+socketServer.connectionCount+' total)'
-		);
-	});
-});
-socketServer.broadcast = function(data) {
-	
-//childProcess
-	socketServer.clients.forEach(function each(client) {
-		if (client.readyState === WebSocket.OPEN) {
-			client.send(data);
-		}
-	});
-};
-
-
-
-console.log('Listening for incomming MPEG-TS Stream on http://127.0.0.1:'+STREAM_PORT+'/<secret>');
-console.log('Awaiting WebSocket connections on ws://127.0.0.1:'+WEBSOCKET_PORT+'/');
-
-
-
-var pythonProcess = spawn('python',["./python/camera.py"]);
-console.log(pythonProcess.pid);
