@@ -1,0 +1,52 @@
+{
+  "photos": [
+    {
+      "height": 168,
+      "compressed_path": "./photos/photos/wanted1.min.jpeg",
+      "width": 300,
+      "compressed": true,
+      "placeholder_path": "./photos/photos/wanted1.placeholder.jpeg",
+      "path": "./photos/photos/wanted1.jpeg"
+    },
+    {
+      "height": 168,
+      "compressed_path": "./photos/photos/elon.min.jpeg",
+      "width": 300,
+      "compressed": true,
+      "placeholder_path": "./photos/photos/elon.placeholder.jpeg",
+      "path": "./photos/photos/elon.jpeg"
+    },
+    {
+      "height": 168,
+      "compressed_path": "./photos/photos/wanted3.min.jpeg",
+      "width": 300,
+      "compressed": true,
+      "placeholder_path": "./photos/photos/wanted3.placeholder.jpeg",
+      "path": "./photos/photos/wanted3.jpeg"
+    },
+    {
+      "height": 168,
+      "compressed_path": "./photos/photos/wanted2.min.jpeg",
+      "width": 299,
+      "compressed": true,
+      "placeholder_path": "./photos/photos/wanted2.placeholder.jpeg",
+      "path": "./photos/photos/wanted2.jpeg"
+    },
+    {
+      "height": 248,
+      "compressed_path": "./photos/photos/wnated4.min.jpeg",
+      "width": 203,
+      "compressed": true,
+      "placeholder_path": "./photos/photos/wnated4.placeholder.jpeg",
+      "path": "./photos/photos/wnated4.jpeg"
+    },
+    {
+      "height": 265,
+      "compressed_path": "./photos/photos/wanted5.min.jpeg",
+      "width": 190,
+      "compressed": true,
+      "placeholder_path": "./photos/photos/wanted5.placeholder.jpeg",
+      "path": "./photos/photos/wanted5.jpeg"
+    }
+  ]
+}
