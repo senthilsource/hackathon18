@@ -20,9 +20,9 @@ console.log(pythonProcess.pid);
 
 var port = process.env.PORT || 3000;
 
-app.listen(port, () => {
-    console.log(`App started in port ${port}`);
-  })
+// app.listen(port, () => {
+//     console.log(`App started in port ${port}`);
+//   })
   
 app.use(express.static(__dirname + '/public'));
 
@@ -113,7 +113,7 @@ var STREAM_SECRET = process.argv[2],
 // Websocket Server
 
 
-var socketServer = new WebSocket.Server({server:server, port:3001}); 
+var socketServer = new WebSocket.Server({server:server, port:port}); 
 console.log(socketServer);
 socketServer.connectionCount = 0;
 socketServer.on('connection', function(socket, upgradeReq) {
