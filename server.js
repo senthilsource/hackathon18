@@ -54,7 +54,7 @@ app.get('/load-photos', function(req, res) {
         var imageLists = '<ul>';
         for (var i = 0; i < files.length; i++) {
             imageLists += '<li><img alt="' + files[i] + '"  src="/photos/' + files[i] + '"></li>' +
-                '<input type="button" width="100" value="Verify" id="verifyActn"/><input type="button" width="100" value="Report" id="reportActn"/><br>';
+                '<input type="button" class="btn btn-primary" width="100" value="Verify" id="verifyActn"/><input type="button" class="btn btn-primary" width="100" value="Report" id="reportActn"/><br>';
         }
         imageLists += '</ul>';
         res.writeHead(200, { 'Content-type': 'text/html' });
