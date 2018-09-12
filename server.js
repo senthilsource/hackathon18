@@ -11,18 +11,21 @@ var {faceIdentityModel} = require("./models/schema");
 var http = require('http'),
 WebSocket = require('ws');
 var {spawn} = require("child_process");
+// var proxy = require('http-proxy-middleware');
 
-const https = require('https');
+// var wsProxy = proxy('ws://localhost:3000', {changeOrigin:true});
+ 
+// var app = express();
+// app.use(wsProxy);
 
-var pythonProcess = spawn('python',["./python/camera.py"]);
-
-console.log(pythonProcess.pid);
 
 var port = process.env.PORT || 3000;
 
-app.listen(3000, () => {
+var server = app.listen(port, () => {
     console.log(`App started in port ${port}`);
-  })
+  });
+
+//server.on('upgrade', wsProxy.upgrade);
   
 app.use(express.static(__dirname + '/public'));
 
@@ -113,8 +116,9 @@ var STREAM_SECRET = process.argv[2],
 // Websocket Server
 
 
-var socketServer = new WebSocket.Server({port:port}); 
-console.log(socketServer);
+var socketServer = new WebSocket.Server({ server: server,
+    autoAcceptConnections: false}); 
+//console.log(socketServer);
 socketServer.connectionCount = 0;
 socketServer.on('connection', function(socket, upgradeReq) {
 	socketServer.connectionCount++;
@@ -184,3 +188,8 @@ var streamServer = http.createServer( function(request, response) {
 
 console.log('Listening for incomming MPEG-TS Stream on http://127.0.0.1:'+STREAM_PORT+'/<secret>');
 console.log('Awaiting WebSocket connections on ws://127.0.0.1:'+WEBSOCKET_PORT+'/');
+
+
+
+var pythonProcess = spawn('python',["./python/camera.py"]);
+console.log(pythonProcess.pid);
