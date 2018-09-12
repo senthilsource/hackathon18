@@ -114,7 +114,7 @@ var STREAM_SECRET = process.argv[2],
 
 const Secureserver = new https.createServer();
 
-var socketServer = new WebSocket.Server({port: 5000}); 
+var socketServer = new WebSocket.Server(SecureServer); 
 console.log(socketServer);
 socketServer.connectionCount = 0;
 socketServer.on('connection', function(socket, upgradeReq) {
