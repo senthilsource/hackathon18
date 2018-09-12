@@ -20,9 +20,9 @@ console.log(pythonProcess.pid);
 
 var port = process.env.PORT || 3000;
 
-// app.listen(port, () => {
-//     console.log(`App started in port ${port}`);
-//   })
+app.listen(3000, () => {
+    console.log(`App started in port ${port}`);
+  })
   
 app.use(express.static(__dirname + '/public'));
 
