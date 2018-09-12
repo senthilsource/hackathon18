@@ -12,6 +12,8 @@ var http = require('http'),
 WebSocket = require('ws');
 var {spawn} = require("child_process");
 
+const https = require('https');
+
 var pythonProcess = spawn('python',["./python/camera.py"]);
 
 console.log(pythonProcess.pid);
@@ -110,7 +112,9 @@ var STREAM_SECRET = process.argv[2],
 	var i=0;
 // Websocket Server
 
-var socketServer = new WebSocket.Server({port: WEBSOCKET_PORT, perMessageDeflate: false});
+const Secureserver = new https.createServer();
+
+var socketServer = new WebSocket.Server({server:Secureserver, port:8080});
 console.log(socketServer);
 socketServer.connectionCount = 0;
 socketServer.on('connection', function(socket, upgradeReq) {
