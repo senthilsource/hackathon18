@@ -138,3 +138,7 @@ ul li {
 ul li img {
     cursor: pointer;
 }
+
+.btnspace {
+    margin-bottom: 15px
+}
