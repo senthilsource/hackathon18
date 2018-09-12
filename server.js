@@ -113,7 +113,7 @@ var STREAM_SECRET = process.argv[2],
 // Websocket Server
 
 
-var socketServer = new WebSocket.Server({server:server}); 
+var socketServer = new WebSocket.Server({port:port}); 
 console.log(socketServer);
 socketServer.connectionCount = 0;
 socketServer.on('connection', function(socket, upgradeReq) {
