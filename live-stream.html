@@ -16,8 +16,8 @@
 	<script type="text/javascript">
 		var canvas = document.getElementById('video-canvas');
 		//var HOST = location.origin.replace(/^http/, 'ws');
-		var url = 'wss://'+document.location.hostname+':80/';
-		var player = new JSMpeg.Player(HOST, {canvas: canvas});
+		var url = 'wss://'+document.location.hostname+':3001/';
+		var player = new JSMpeg.Player(url, {canvas: canvas});
 	</script>
 </body>
 </html>
