@@ -15,9 +15,38 @@ var path = require('path');
 var url = require('url');
 var imageDir = './public/photos/photos';
 
+const googleMapsApi = require('@google/maps');
+
+
+var gMapClient = googleMapsApi.createClient({
+    key: 'AIzaSyDJQ1uY01MsI8SS0WWuktKxvYhxmDYVprI',
+    Promise: Promise
+});
+
+
+app.get('/map', (req,res)=> res.sendFile(__dirname + "/map.html"));
+
+app.get('/getDirections', (req, res)=>{
+res.setHeader('Content-Type', 'application/json');
+var params = {
+    origin: 'Glasgow, UK',
+    destination: 'London, UK',
+    mode : 'driving',      
+    waypoints: Array.of('Edinburgh, UK', 'Leeds, UK', 'Mancester, UK'),        
+    transit_mode: 'bus'
+};
+
+  gMapClient.directions(params).asPromise().then((data)=>{             
+        res.send(data);
+    }).catch((err)=>{       
+        res.send(err);
+    });   
+});
+
+
 var pythonProcess = spawn('python', ["./python/camera.py"]);
 
-console.log(pythonProcess.pid);
+//console.log(pythonProcess.pid);
 
 var port = process.env.PORT || 3000;
 
@@ -37,20 +66,20 @@ app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }))
 
 console.log("server runnning");
 
-app.get('/', function(req, res) {
+app.get('/', function (req, res) {
     res.sendFile(__dirname + "/index.html");
 });
 
-app.get('/live', function(req, res) {
+app.get('/live', function (req, res) {
     res.sendFile(__dirname + "/live-stream.html");
 });
 
-app.get('/verify', function(req, res) {
+app.get('/verify', function (req, res) {
     res.sendFile(__dirname + "/test.html");
 });
 
-app.get('/load-photos', function(req, res) {
-    getImages(imageDir, function(err, files) {
+app.get('/load-photos', function (req, res) {
+    getImages(imageDir, function (err, files) {
         var imageLists = '<ul>';
         for (var i = 0; i < files.length; i++) {
             imageLists += '<li><img alt="' + files[i] + '"  src="/photos/' + files[i] + '"></li>' +
@@ -64,7 +93,7 @@ app.get('/load-photos', function(req, res) {
     function readIndividualFile() {
         var query = url.parse(req.url, true).query;
         var pic = query.image;
-        fs.readFile(imageDir + pic, function(err, content) {
+        fs.readFile(imageDir + pic, function (err, content) {
             if (err) {
                 res.writeHead(400, { 'Content-type': 'text/html' })
                 console.log(err);
@@ -81,7 +110,7 @@ app.get('/load-photos', function(req, res) {
         var fileType = '.jpeg',
             files = [],
             i;
-        fs.readdir(imageDir, function(err, list) {
+        fs.readdir(imageDir, function (err, list) {
             for (i = 0; i < list.length; i++) {
                 if (path.extname(list[i]) === fileType) {
                     files.push(list[i]); //store the file name into the array files
@@ -92,11 +121,11 @@ app.get('/load-photos', function(req, res) {
     }
 });
 
-app.get('/load', function(req, res) {
+app.get('/load', function (req, res) {
     res.sendFile(__dirname + "/load.html");
 });
 
-app.get('/showMap', function(req, res) {
+app.get('/showMap', function (req, res) {
     res.sendFile(__dirname + "/gmap.html");
 });
 
@@ -156,9 +185,9 @@ var i = 0;
 // Websocket Server
 
 var socketServer = new WebSocket.Server({ port: WEBSOCKET_PORT, perMessageDeflate: false });
-console.log(socketServer);
+//console.log(socketServer);
 socketServer.connectionCount = 0;
-socketServer.on('connection', function(socket, upgradeReq) {
+socketServer.on('connection', function (socket, upgradeReq) {
     socketServer.connectionCount++;
 
 
@@ -168,14 +197,14 @@ socketServer.on('connection', function(socket, upgradeReq) {
         (upgradeReq || socket.upgradeReq).headers['user-agent'],
         '(' + socketServer.connectionCount + ' total)'
     );
-    socket.on('close', function(code, message) {
+    socket.on('close', function (code, message) {
         socketServer.connectionCount--;
         console.log(
             'Disconnected WebSocket (' + socketServer.connectionCount + ' total)'
         );
     });
 });
-socketServer.broadcast = function(data) {
+socketServer.broadcast = function (data) {
 
     //childProcess
     socketServer.clients.forEach(function each(client) {
@@ -186,7 +215,7 @@ socketServer.broadcast = function(data) {
 };
 
 // HTTP Server to accept incomming MPEG-TS Stream from ffmpeg
-var streamServer = http.createServer(function(request, response) {
+var streamServer = http.createServer(function (request, response) {
     var params = request.url.substr(1).split('/');
 
     // if (params[0] !== STREAM_SECRET) {
@@ -203,14 +232,14 @@ var streamServer = http.createServer(function(request, response) {
         request.socket.remoteAddress + ':' +
         request.socket.remotePort
     );
-    request.on('data', function(data) {
+    request.on('data', function (data) {
         socketServer.broadcast(data);
         console.log(data);
         if (request.socket.recording) {
             request.socket.recording.write(data);
         }
     });
-    request.on('end', function() {
+    request.on('end', function () {
         console.log('close');
         if (request.socket.recording) {
             request.socket.recording.close();
@@ -224,5 +253,5 @@ var streamServer = http.createServer(function(request, response) {
     }
 }).listen(STREAM_PORT);
 
-console.log('Listening for incomming MPEG-TS Stream on http://127.0.0.1:' + STREAM_PORT + '/<secret>');
-console.log('Awaiting WebSocket connections on ws://127.0.0.1:' + WEBSOCKET_PORT + '/');
+//console.log('Listening for incomming MPEG-TS Stream on http://127.0.0.1:' + STREAM_PORT + '/<secret>');
+//console.log('Awaiting WebSocket connections on ws://127.0.0.1:' + WEBSOCKET_PORT + '/');
