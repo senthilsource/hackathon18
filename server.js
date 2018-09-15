@@ -1,89 +1,153 @@
 var express = require("express");
 var { mongoose } = require("./db/mongoose");
 var app = express();
-var server = require('http').createServer(app);
 var bodyParser = require('body-parser');
 const fileUpload = require('express-fileupload');
+//App
+var path = require('path');
+var favicon = require('serve-favicon');
+var bodyParser = require('body-parser');
+var compression = require('compression');
+var socket_io = require("socket.io");
+// App 
+var http = require('http');
 var _ = require("lodash");
 var fs = require("fs");
 var kairosApi = require("./kairos/kairos-api");
 var { faceIdentityModel } = require("./models/schema");
+var { fetchAllUserLocation, reportUserDetails } = require('./db/userdb');
 var http = require('http'),
     WebSocket = require('ws');
 var { spawn } = require("child_process");
 var path = require('path');
 var url = require('url');
-var imageDir = './public/photos/photos';
+var imageDir = './public/photos/';
+//To upload
+app.use(fileUpload());
 
+app.use(bodyParser.json({ limit: '10mb', extended: true }))
+app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }))
 const googleMapsApi = require('@google/maps');
-
 
 var gMapClient = googleMapsApi.createClient({
     key: 'AIzaSyDJQ1uY01MsI8SS0WWuktKxvYhxmDYVprI',
     Promise: Promise
 });
 
+var io = socket_io();
+app.io = io;
 
-app.get('/map', (req,res)=> res.sendFile(__dirname + "/map.html"));
+app.get('/map', (req, res) => res.sendFile(__dirname + "/map.html"));
 
-app.get('/getDirections', (req, res)=>{
-res.setHeader('Content-Type', 'application/json');
-var params = {
-    origin: 'Glasgow, UK',
-    destination: 'London, UK',
-    mode : 'driving',      
-    waypoints: Array.of('Edinburgh, UK', 'Leeds, UK', 'Mancester, UK'),        
-    transit_mode: 'bus'
-};
+app.get('/getDirections', async(req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+   // var name = req.param('id');
+    var userrs = await fetchAllUserLocation();
+    prepareUserDirections(userrs).then((response) => {
+        res.send(response);
+    }).catch((err) => res.send(err));
 
-  gMapClient.directions(params).asPromise().then((data)=>{             
-        res.send(data);
-    }).catch((err)=>{       
-        res.send(err);
-    });   
+});
+
+app.get('/report-user', (req, res) => {
+    try {
+        var id = req.query.id;
+        res.setHeader('Content-Type', 'application/json');
+        reportUserDetails(id);
+    } catch (e) {
+        console.log(e);
+    }
+    res.send('{}');
+});
+
+app.get('/train', function(req, res) {
+    res.sendFile(__dirname + "/train.html");
+});
+
+app.post("/trainme", (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    if (req.files != undefined) {
+        fs.writeFile('./known_people/' + req.body.personName + '.jpeg', req.files.file0.data, (err) => {
+            if (err) {
+                //  console.log("Error::", err);
+                res.status(500).send(err);
+            };
+        });
+    }
+    var pythonProcess = spawn('python', ["./python/train.py"]);
+    // console.log(pythonProcess.pid);
+    res.send("File has been trained successfully");
+
 });
 
 
-var pythonProcess = spawn('python', ["./python/camera.py"]);
+var prepareUserDirections = async(userDetails) => {
+    var n = userDetails.length;
+    console.log(userDetails);
+    var originPts = { "lat": "" + userDetails[0].lat, "lng": "" + userDetails[0].lng };
+    var destinationPts = { "lat": "" + userDetails[n - 1].lat, "lng": "" + userDetails[n - 1].lng };
+    var wayPoints = [];
+    if (n > 2) {
+        for (var i = 1; i < n - 1; i++) {
+            wayPoints.push({ "lat": "" + userDetails[i].lat, "lng": "" + userDetails[i].lng });
+        }
+    }
 
-//console.log(pythonProcess.pid);
+    var params = {
+        origin: originPts,
+        destination: destinationPts,
+        mode: 'driving',
+        waypoints: wayPoints,
+        transit_mode: 'bus'
+    };
 
-var port = process.env.PORT || 3000;
+    return new Promise((resolve, reject) => {
+        gMapClient.directions(params).asPromise().then((data) => {
+            //  console.log(userDetails);
+            _.assign(data, { photoPath: userDetails[0].path + ".jpeg" });
+            //  console.log(data);
+            resolve(data);
+        }).catch((err) => {
+            reject(err);
+        });
+    }).catch((err) => {
+        console.log(err);
+    });
 
-app.listen(port, () => {
-    console.log(`App started in port ${port}`);
-})
+}
 
 app.use(express.static(__dirname + '/public'));
 
+//App
 app.use('/scripts', express.static(__dirname + '/node_modules/materialize-css/dist/'));
+app.use('/scripts/axios', express.static(__dirname + '/node_modules/axios/dist/'));
+app.use('/socket.io', express.static(__dirname + '/node_modules/socket.io-client/dist/'));
 
-//To upload
-app.use(fileUpload());
 
-app.use(bodyParser.json({ limit: '10mb', extended: true }))
-app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }))
-
-console.log("server runnning");
-
-app.get('/', function (req, res) {
+app.get('/', function(req, res) {
     res.sendFile(__dirname + "/index.html");
 });
 
-app.get('/live', function (req, res) {
+app.get('/traink', function(req, res) {
+    res.sendFile(__dirname + "/index1.html");
+});
+
+app.get('/live', function(req, res) {
     res.sendFile(__dirname + "/live-stream.html");
 });
 
-app.get('/verify', function (req, res) {
+app.get('/verify', function(req, res) {
     res.sendFile(__dirname + "/test.html");
 });
 
-app.get('/load-photos', function (req, res) {
-    getImages(imageDir, function (err, files) {
+app.get('/load-photos', function(req, res) {
+    getImages(imageDir, function(err, files) {
         var imageLists = '<ul>';
+        var name = '';
         for (var i = 0; i < files.length; i++) {
-            imageLists += '<li><img alt="' + files[i] + '"  src="/photos/' + files[i] + '"></li>' +
-                '<input type="button" class="btn btn-primary btnspace" width="100" value="Verify" id="verifyActn"/><input type="button" class="btn btn-primary btnspace" width="100" value="Report" id="reportActn"/><br>';
+            name = files[i].split('.')[0];
+            imageLists += '<li><img alt="' + name + ' "id="' + name + '" src="/photos/' + files[i] + '"></li>' +
+                '<input type="button" id="' + name + '" class="btn btn-primary btnspace" width="100" value="Train" id="verifyActn"/><input type="button" id="' + name + '"class="btn btn-primary btnspace" width="100" value="Report" onClick="javascript:reportUser(\'' + name + '\');"/><br>';
         }
         imageLists += '</ul>';
         res.writeHead(200, { 'Content-type': 'text/html' });
@@ -93,7 +157,7 @@ app.get('/load-photos', function (req, res) {
     function readIndividualFile() {
         var query = url.parse(req.url, true).query;
         var pic = query.image;
-        fs.readFile(imageDir + pic, function (err, content) {
+        fs.readFile(imageDir + pic, function(err, content) {
             if (err) {
                 res.writeHead(400, { 'Content-type': 'text/html' })
                 console.log(err);
@@ -110,7 +174,7 @@ app.get('/load-photos', function (req, res) {
         var fileType = '.jpeg',
             files = [],
             i;
-        fs.readdir(imageDir, function (err, list) {
+        fs.readdir(imageDir, function(err, list) {
             for (i = 0; i < list.length; i++) {
                 if (path.extname(list[i]) === fileType) {
                     files.push(list[i]); //store the file name into the array files
@@ -121,11 +185,11 @@ app.get('/load-photos', function (req, res) {
     }
 });
 
-app.get('/load', function (req, res) {
+app.get('/load', function(req, res) {
     res.sendFile(__dirname + "/load.html");
 });
 
-app.get('/showMap', function (req, res) {
+app.get('/showMap', function(req, res) {
     res.sendFile(__dirname + "/gmap.html");
 });
 
@@ -169,89 +233,24 @@ app.post("/recognize", (req, res) => {
     });
 });
 
-// if (process.argv.length < 3) {
-// 	console.log(
-// 		'Usage: \n' +
-// 		'node websocket-relay.js <secret> [<stream-port> <websocket-port>]'
-// 	);
-// 	process.exit();
-// }
 
-var STREAM_SECRET = process.argv[2],
-    STREAM_PORT = process.argv[3] || 9990,
-    WEBSOCKET_PORT = process.argv[4] || 8082,
-    RECORD_STREAM = false;
-var i = 0;
-// Websocket Server
+//var pythonProcess = spawn('python', ["./python/camera.py"]);
 
-var socketServer = new WebSocket.Server({ port: WEBSOCKET_PORT, perMessageDeflate: false });
-//console.log(socketServer);
-socketServer.connectionCount = 0;
-socketServer.on('connection', function (socket, upgradeReq) {
-    socketServer.connectionCount++;
+//console.log(pythonProcess.pid);
 
+var port = process.env.PORT || 3000;
 
-    console.log(
-        'New WebSocket Connection: ',
-        (upgradeReq || socket.upgradeReq).socket.remoteAddress,
-        (upgradeReq || socket.upgradeReq).headers['user-agent'],
-        '(' + socketServer.connectionCount + ' total)'
-    );
-    socket.on('close', function (code, message) {
-        socketServer.connectionCount--;
-        console.log(
-            'Disconnected WebSocket (' + socketServer.connectionCount + ' total)'
-        );
-    });
+//App
+var train = require('./server/routes/train');
+var run = require('./server/routes/run')(app.io);
+//var run = require('./server/routes/run');
+
+app.use('/train', train);
+//app.use('/run', run);
+
+var server = http.createServer(app);
+app.io.attach(server);
+
+server.listen(port, () => {
+    console.log(`App started in port ${port}`);
 });
-socketServer.broadcast = function (data) {
-
-    //childProcess
-    socketServer.clients.forEach(function each(client) {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(data);
-        }
-    });
-};
-
-// HTTP Server to accept incomming MPEG-TS Stream from ffmpeg
-var streamServer = http.createServer(function (request, response) {
-    var params = request.url.substr(1).split('/');
-
-    // if (params[0] !== STREAM_SECRET) {
-    // 	console.log(
-    // 		'Failed Stream Connection: '+ request.socket.remoteAddress + ':' +
-    // 		request.socket.remotePort + ' - wrong secret.'
-    // 	);
-    // 	response.end();
-    // }
-
-    response.connection.setTimeout(0);
-    console.log(
-        'Stream Connected: ' +
-        request.socket.remoteAddress + ':' +
-        request.socket.remotePort
-    );
-    request.on('data', function (data) {
-        socketServer.broadcast(data);
-        console.log(data);
-        if (request.socket.recording) {
-            request.socket.recording.write(data);
-        }
-    });
-    request.on('end', function () {
-        console.log('close');
-        if (request.socket.recording) {
-            request.socket.recording.close();
-        }
-    });
-
-    // Record the stream to a local file?
-    if (RECORD_STREAM) {
-        var path = 'recordings/' + Date.now() + '.ts';
-        request.socket.recording = fs.createWriteStream(path);
-    }
-}).listen(STREAM_PORT);
-
-//console.log('Listening for incomming MPEG-TS Stream on http://127.0.0.1:' + STREAM_PORT + '/<secret>');
-//console.log('Awaiting WebSocket connections on ws://127.0.0.1:' + WEBSOCKET_PORT + '/');
