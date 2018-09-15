@@ -35,6 +35,7 @@ const googleMapsApi = require('@google/maps');
 // });
 
 // var io = socket_io();
+
 // app.io = io;
 
 // app.get('/map', (req, res) => res.sendFile(__dirname + "/map.html"));
