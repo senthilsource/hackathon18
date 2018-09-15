@@ -1,5 +1,5 @@
 var Kairos = require('kairos-api');
-var client = new Kairos('6c2be07a', 'b008e9aba56f74d9cdbe59c8b040ae21');
+var client = new Kairos('b12451b4', '90bdaf6886a96b464dec8389e3836519');
 var request = require("request");
  
 var params = {    
@@ -15,6 +15,7 @@ var enroll =async (reqData) =>{
     return new Promise((resolve, reject)=>{
         client.enroll(enrollParams).then(function(result){          
             if(result.status==200 && result.body.Errors==undefined){
+                console.log(JSON.stringify(result, undefined,2));
                  resolve(result);
             }else{                
                 reject(result.body.Errors);
@@ -34,6 +35,7 @@ var recognize = (reqData) =>{
     return new Promise((resolve, reject)=>{
     client.recognize(recognizeParams).then((result)=>{
         if(result.status==200 && result.body.Errors==undefined){
+            console.log(JSON.stringify(result, undefined,2));
             resolve(result);
        }else{                         
            reject(result.body.Errors);
