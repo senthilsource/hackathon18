@@ -136,9 +136,9 @@ app.get('/traink', function(req, res) {
 //     res.sendFile(__dirname + "/live-stream.html");
 // });
 
-// app.get('/verify', function(req, res) {
-//     res.sendFile(__dirname + "/test.html");
-// });
+app.get('/verify', function(req, res) {
+    res.sendFile(__dirname + "/test.html");
+});
 
 // app.get('/load-photos', function(req, res) {
 //     getImages(imageDir, function(err, files) {
