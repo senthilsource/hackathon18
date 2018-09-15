@@ -15,7 +15,7 @@ var _ = require("lodash");
 var fs = require("fs");
 var kairosApi = require("./kairos/kairos-api");
 var { faceIdentityModel } = require("./models/schema");
-var { fetchAllUserLocation, reportUserDetails } = require('./db/userdb');
+//var { fetchAllUserLocation, reportUserDetails } = require('./db/userdb');
 var http = require('http'),
     WebSocket = require('ws');
 var { spawn } = require("child_process");
@@ -42,7 +42,7 @@ app.get('/map', (req, res) => res.sendFile(__dirname + "/map.html"));
 app.get('/getDirections', async(req, res) => {
     res.setHeader('Content-Type', 'application/json');
    // var name = req.param('id');
-    var userrs = await fetchAllUserLocation();
+    var userrs = [];//await fetchAllUserLocation();
     prepareUserDirections(userrs).then((response) => {
         res.send(response);
     }).catch((err) => res.send(err));
@@ -53,7 +53,7 @@ app.get('/report-user', (req, res) => {
     try {
         var id = req.query.id;
         res.setHeader('Content-Type', 'application/json');
-        reportUserDetails(id);
+      //  reportUserDetails(id);
     } catch (e) {
         console.log(e);
     }
